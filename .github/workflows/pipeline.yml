@@ -39,28 +39,22 @@ jobs:
       - name: Run Data Preparation
         run: |
           python wellness_tourism_package_customer_prediction/model_building/data_prep.py
-  
+          
   model_training:
    needs: data_prep
    runs-on: ubuntu-latest
    env:
     HF_TOKEN: ${{ secrets.HF_TOKEN }}
-    MLFLOW_TRACKING_URI: https://visaged-incongruent-verona.ngrok-free.dev
    steps:
     - uses: actions/checkout@v4
     - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r wellness_tourism_package_customer_prediction/requirements.txt
-    - name: Verify MLflow server reachable
+    - name: Start MLflow Server
       run: |
-        python - <<'PY'
-        import os, requests
-        uri = os.environ["MLFLOW_TRACKING_URI"].rstrip("/")
-        r = requests.get(uri + "/api/2.0/mlflow/experiments/list", timeout=20)
-        print("Status:", r.status_code)
-        print(r.text[:300])
-        PY
+        nohup mlflow ui --host 0.0.0.0 --port 5000 &  # Run MLflow UI in the background
+        sleep 5  # Wait for a moment to let the server starts
     - name: Train Model
       run: |
         python wellness_tourism_package_customer_prediction/model_building/train.py
